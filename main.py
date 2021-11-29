@@ -1,10 +1,13 @@
 import requests
 import base64, json
-from secrets import *
+from secrets import clientID, clientSecret
+
+# CTRL ALT L to format json
 
 authURL = "https://accounts.spotify.com/api/token"
 authHeader = {}
 authData = {}
+
 
 # Base64 Encode Client ID and Client Secret
 
@@ -25,6 +28,7 @@ def getAccessToken(clientID, clientSecret):
 
     return accessToken
 
+
 def getPlaylistTracks(token, playlistID):
     playlistEndPoint = f"https://api.spotify.com/v1/playlists/{playlistID}"
 
@@ -37,6 +41,7 @@ def getPlaylistTracks(token, playlistID):
 
     return playlistObject
 
+
 # API requests
 token = getAccessToken(clientID, clientSecret)
 playlistID = "5CORh2nLsbjOQQ4leKe5jN?si=9139e89eec2a4216"
@@ -47,7 +52,7 @@ with open('tracklist.json', 'w') as f:
     json.dump(tracklist, f)
 
 for t in tracklist['tracks']['items']:
-    print ('----')
+    print('----')
     for a in t['track']['artists']:
         print(a['name'])
     songName = t['track']['name']
