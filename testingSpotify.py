@@ -1,6 +1,6 @@
 import requests
 import base64, json
-from secrets import clientID, clientSecret
+from spotifysecrets import clientID, clientSecret
 
 # CTRL ALT L to format json
 

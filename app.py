@@ -3,7 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from flask import Flask, request, url_for, session, redirect
 import json
 import time
-# from secrets import likedID, likedSecret
+from spotifysecrets import likedID, likedSecret
 
 app = Flask(__name__)
 
@@ -87,9 +87,6 @@ def get_token():
     token_valid = True
     return token_info, token_valid
 
-
-likedID = "d16c203095be4fdd8416513097acbcb5"
-likedSecret = "ef2088df16d44622a652c2364b26d99f"
 
 def create_spotify_oauth():
     return SpotifyOAuth(
