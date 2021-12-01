@@ -1,6 +1,6 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from flask import Flask, request, url_for, session, redirect
+from flask import Flask, request, url_for, session, redirect, render_template
 import json
 import time
 from spotifysecrets import likedID, likedSecret
@@ -46,7 +46,7 @@ def get_all_tracks():
     if not authorized:
         return redirect('/')
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
-    results = []
+    songList = []
     count = 0
     while True:
         offset = count * 50
@@ -54,15 +54,12 @@ def get_all_tracks():
         curGroup = sp.current_user_saved_tracks(limit=50, offset=offset)['items']
         for idx, item in enumerate(curGroup):
             track = item['track']
-            val = track['name'] + " - " + track['artists'][0]['name']
-            results += [val]
+            val = {'name': track['name'], 'artist': track['artists'][0]['name']}
+            songList += [val]
         if (len(curGroup) < 50):
             break
-    print(results)
-    return str(len(results))
-    # df = pd.DataFrame(results, columns=["song names"])
-    # df.to_csv('songs.csv', index=False)
-    return "done"
+    return render_template('index.html', songList=songList)
+
 
 # Checks to see if token is valid and gets a new token if not
 def get_token():
