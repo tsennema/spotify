@@ -3,13 +3,16 @@ from spotipy.oauth2 import SpotifyOAuth
 from flask import Flask, request, url_for, session, redirect, render_template
 import json
 import time
+import os
 from spotifysecrets import likedID, likedSecret
 
 app = Flask(__name__)
 
 app.secret_key = "OsdfdEdfdI234D"
 app.config['SESSION_COOKIE_NAME'] = 'Cookie'
-TOKENINFO = "token_info"
+
+
+# TOKENINFO = "token_info"
 
 @app.route('/')
 def login():
@@ -19,11 +22,14 @@ def login():
     # print(auth_url)
     return redirect(auth_url)
 
-@app.route('/logout')
+
+@app.route('/logout', methods=['GET', 'POST'])
 def logout():
     print("logout")
     for key in list(session.keys()):
         session.pop(key)
+    if os.path.exists("./.cache"):
+        os.remove("./.cache")
     return redirect('/')
 
 
@@ -87,7 +93,8 @@ def get_token():
 
 def create_spotify_oauth():
     return SpotifyOAuth(
-            client_id=likedID,
-            client_secret=likedSecret,
-            redirect_uri=url_for('authorize', _external=True),
-            scope="user-library-read")
+        client_id=likedID,
+        client_secret=likedSecret,
+        redirect_uri=url_for('authorize', _external=True),
+        show_dialog=True,
+        scope="user-library-read")
