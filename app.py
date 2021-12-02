@@ -16,7 +16,6 @@ app.config['SESSION_COOKIE_NAME'] = 'Cookie'
 
 @app.route('/')
 def login():
-    print("login")
     sp_oauth = create_spotify_oauth()
     auth_url = sp_oauth.get_authorize_url()
     # print(auth_url)
@@ -25,7 +24,6 @@ def login():
 
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
-    print("logout")
     for key in list(session.keys()):
         session.pop(key)
     if os.path.exists("./.cache"):
@@ -35,23 +33,23 @@ def logout():
 
 @app.route('/authorize')
 def authorize():
-    print("authorize")
     sp_oauth = create_spotify_oauth()
     session.clear()
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session["token_info"] = token_info
-    return redirect("/getTracks")
+    return redirect("/functions")
 
 
-@app.route('/getTracks')
-def get_all_tracks():
-    print("getTracks")
+@app.route('/functions')
+def spotifyFunctions():
+    # Confirm authorization
     session['token_info'], authorized = get_token()
     session.modified = True
     if not authorized:
         return redirect('/')
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+    # Retrieves user's saved songs
     songList = []
     count = 0
     while True:
@@ -62,14 +60,28 @@ def get_all_tracks():
             track = item['track']
             val = {'name': track['name'], 'artist': track['artists'][0]['name']}
             songList += [val]
-        if (len(curGroup) < 50):
+        if len(curGroup) < 50:
             break
-    return render_template('index.html', songList=songList)
+    # Retrieves user's public owned playlists
+    playlistsObject = sp.current_user_playlists()
+    playlists = []
+    for p in playlistsObject["items"]:
+        playlists.append({"name": p["name"], "id": p["id"]})
+    # Just added a way to more easily visualize the structure
+    with open('playlistTest.json', 'w') as f:
+        json.dump(playlistsObject, f)
+    return render_template('index.html', songList=songList, playlists=playlists)
+
+
+@app.route('/addToPlaylist', methods=['POST'])
+def addToPlaylist():
+    playlistID = request.form.get("addToPlaylist")
+    print(playlistID)
+    return redirect('/functions')
 
 
 # Checks to see if token is valid and gets a new token if not
 def get_token():
-    print("gettoken")
     token_valid = False
     token_info = session.get("token_info", {})
 
@@ -83,7 +95,7 @@ def get_token():
     is_token_expired = session.get('token_info').get('expires_at') - now < 60
 
     # Refreshing token if it has expired
-    if (is_token_expired):
+    if is_token_expired:
         sp_oauth = create_spotify_oauth()
         token_info = sp_oauth.refresh_access_token(session.get('token_info').get('refresh_token'))
 
@@ -97,4 +109,4 @@ def create_spotify_oauth():
         client_secret=likedSecret,
         redirect_uri=url_for('authorize', _external=True),
         show_dialog=True,
-        scope="user-library-read")
+        scope="user-library-read, playlist-modify-public")
