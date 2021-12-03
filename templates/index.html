@@ -6,39 +6,52 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Functions</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 
 <body>
-    <h1>List of Saved Songs</h1>
-    <form action="/logout">
+    <form action="/logout" style="float:right">
         <input type="submit" name='logout' value="Logout">
     </form>
+    <div class='container'>
+        <div class='app'>
+            <span class='h1'>Add Liked Songs to Playlist</span>
 
-    <form action="/addToPlaylist" method='post'>
-        <select name="addToPlaylist" id="addToPlaylist">
-            {% for playlist in playlists %}
-            <option value="{{ playlist.id }}">{{ playlist.name }}</option>
-            {% endfor %}
-        </select>
-        <button type='submit'>Add Saved Songs to Playlist</button>
-    </form>
+            <form action="/addToPlaylist" method='post'>
+                <label for="addToPlaylist">Select Playlist</label>
+                <select name="addToPlaylist" id="addToPlaylist">
+                    {% for playlist in playlists %}
+                    <option value="{{ playlist.id }}">{{ playlist.name }}</option>
+                    {% endfor %}
+                </select>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Song Title</th>
-                <th>Artist</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for song in songList %}
-            <tr>
-                <td>{{ song.name }}</td>
-                <td>{{ song.artist }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                <button type='submit'>Add Saved Songs to Playlist</button>
+            </form>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Song Title</th>
+                        <th>Artist</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for song in songList %}
+                    <tr>
+                        <td>{{ song.name }}</td>
+                        <td>{{ song.artist }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class='app'>
+            <span>Test1</span>
+        </div>
+        <div class='app'>
+            <span>Test2</span>
+        </div>
+    </div>
 </body>
 
 </html>

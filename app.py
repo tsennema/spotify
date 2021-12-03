@@ -49,19 +49,12 @@ def spotifyFunctions():
     if not authorized:
         return redirect('/')
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
-    # Retrieves user's saved songs
+    songIDs = getLikedSongs(sp)
     songList = []
-    count = 0
-    while True:
-        offset = count * 50
-        count += 1
-        curGroup = sp.current_user_saved_tracks(limit=50, offset=offset)['items']
-        for idx, item in enumerate(curGroup):
-            track = item['track']
-            val = {'name': track['name'], 'artist': track['artists'][0]['name']}
-            songList += [val]
-        if len(curGroup) < 50:
-            break
+    for song in songIDs:
+        track = sp.track(song)
+        songList.append({"name": track["name"], "artist": track["artists"][0]["name"]})
+
     # Retrieves user's public owned playlists
     playlistsObject = sp.current_user_playlists()
     playlists = []
@@ -75,10 +68,38 @@ def spotifyFunctions():
 
 @app.route('/addToPlaylist', methods=['POST'])
 def addToPlaylist():
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
     playlistID = request.form.get("addToPlaylist")
+    songList = getLikedSongs(sp)
     print(playlistID)
+    print(songList)
+    # sp.playlist_add_items(playlistID, songList)
     return redirect('/functions')
 
+
+@app.route('/removeFromLiked', methods=['POST'])
+def removeFromLiked():
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+    songList = getLikedSongs(sp)
+    # sp.current_user_saved_tracks_delete(songList)
+
+    return redirect('/functions')
+
+
+def getLikedSongs(sp):
+    # Returns list of ids of songs in user's library
+    songList = []
+    count = 0
+    while True:
+        offset = count * 50
+        count += 1
+        curGroup = sp.current_user_saved_tracks(limit=50, offset=offset)['items']
+        for idx, item in enumerate(curGroup):
+            # val = {item['track']['id']}
+            songList.append(item['track']['id'])
+        if len(curGroup) < 50:
+            break
+    return songList
 
 # Checks to see if token is valid and gets a new token if not
 def get_token():
