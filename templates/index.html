@@ -27,7 +27,9 @@
 
                 <button type='submit'>Add Saved Songs to Playlist</button>
             </form>
-
+            <form action="/removeFromLiked" method='post'>
+                <button type='submit'>Remove All from Saved Songs</button>
+            </form>
             <table>
                 <thead>
                     <tr>
@@ -46,7 +48,30 @@
             </table>
         </div>
         <div class='app'>
-            <span>Test1</span>
+            <span class='h1'>Generate Partial Playlist</span>
+            <form action="/createPartialPlaylist" method='post'>
+                <div>
+                    <button type='submit'>Generate</button>
+                </div>
+                <label for="createPartialPlaylist">Select Playlist to Shorten</label>
+                <select name="createPartialPlaylist" id="createPartialPlaylist">
+                    {% for playlist in followedPlaylists %}
+                    <option value="{{ playlist.id }}">{{ playlist.name }} - {{ playlist.length }} hr</option>
+                    {% endfor %}
+                </select>
+                <div>
+                    <label for="newName">Name of Shortened Playlist</label>
+                    <input name='newName' type="text" autocomplete='off'>
+                </div>
+                <div>
+                    <label for="shuffleOn">Shuffle?</label>
+                    <input name='shuffleOn' type="checkbox">
+                </div>
+                <div>
+                    <label for="playlistLength">Max Length of Shortened Playlist (hr)</label>
+                    <input name='playlistLength' type="text" placeholder='Min 0.5'>
+                </div>
+            </form>
         </div>
         <div class='app'>
             <span>Test2</span>

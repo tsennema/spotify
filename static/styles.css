@@ -4,6 +4,8 @@
     justify-content:space-evenly;
 }
 .app{
+    display: flex;
+    flex-direction:column;
     border: medium solid black;
     padding: 2em;
 }

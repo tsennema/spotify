@@ -55,15 +55,24 @@ def spotifyFunctions():
         track = sp.track(song)
         songList.append({"name": track["name"], "artist": track["artists"][0]["name"]})
 
-    # Retrieves user's public owned playlists
+    # Retrieves user's public owned playlists and *publicly* followed playlists
     playlistsObject = sp.current_user_playlists()
     playlists = []
+    followedPlaylists = []
+    user = sp.current_user()
     for p in playlistsObject["items"]:
-        playlists.append({"name": p["name"], "id": p["id"]})
+        if p['owner']['id'] == user['id']:
+            playlists.append({"name": p["name"], "id": p["id"]})
+        else:
+            followed = sp.playlist(p['id'])
+            length = 0
+            for track in followed['tracks']['items']:
+                length += track['track']['duration_ms'] / 1000 / 60 / 60
+            followedPlaylists.append({"name": p["name"], "id": p["id"], "length": round(length, 3)})
     # Just added a way to more easily visualize the structure
-    with open('playlistTest.json', 'w') as f:
-        json.dump(playlistsObject, f)
-    return render_template('index.html', songList=songList, playlists=playlists)
+    # with open('playlistTest.json', 'w') as f:
+    #     json.dump(playlistsObject, f)
+    return render_template('index.html', songList=songList, playlists=playlists, followedPlaylists=followedPlaylists)
 
 
 @app.route('/addToPlaylist', methods=['POST'])
@@ -84,6 +93,39 @@ def removeFromLiked():
     # sp.current_user_saved_tracks_delete(songList)
 
     return redirect('/functions')
+
+
+@app.route('/createPartialPlaylist', methods=['POST'])
+def createPartialPlaylist():
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+    # Get string playlistID
+    playlistID = request.form.get("createPartialPlaylist")
+    if not playlistID:
+        return redirect('/functions')
+    # Get string newName
+    newName = request.form.get("newName")
+    if not newName:
+        return redirect('/functions')
+    # Shuffle will be "on" or None
+    shuffle = request.form.get("shuffleOn")
+    # Get max length, convert to float
+    maxLength = request.form.get("playlistLength")
+    if not isFloat(maxLength) or float(maxLength) < 0.5:
+        return redirect('/functions')
+    maxLength = float(maxLength)
+
+
+    print(playlistID, newName, shuffle, maxLength)
+
+    return redirect('/functions')
+
+
+def isFloat(i):
+    try:
+        float(i)
+    except ValueError:
+        return False
+    return True
 
 
 def getLikedSongs(sp):
