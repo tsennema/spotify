@@ -2,8 +2,9 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from flask import Flask, request, url_for, session, redirect, render_template
 import json
-import time
+import time, datetime
 import os
+import random
 from spotifysecrets import likedID, likedSecret
 
 app = Flask(__name__)
@@ -80,8 +81,6 @@ def addToPlaylist():
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
     playlistID = request.form.get("addToPlaylist")
     songList = getLikedSongs(sp)
-    print(playlistID)
-    print(songList)
     # sp.playlist_add_items(playlistID, songList)
     return redirect('/functions')
 
@@ -102,21 +101,49 @@ def createPartialPlaylist():
     playlistID = request.form.get("createPartialPlaylist")
     if not playlistID:
         return redirect('/functions')
+    # Get list of song IDs
+    playlistTracksObject = sp.playlist_items(playlistID, additional_types=("track",))
+    playlistTracks = []
+    for track in playlistTracksObject["items"]:
+        playlistTracks.append(track['track']['id'])
     # Get string newName
     newName = request.form.get("newName")
     if not newName:
         return redirect('/functions')
+
     # Shuffle will be "on" or None
     shuffle = request.form.get("shuffleOn")
+    if shuffle:
+        shuffledTracks = []
+        while len(shuffledTracks) < len(playlistTracks):
+            tmp = random.choice(range(len(playlistTracks)))
+            if playlistTracks[tmp] not in shuffledTracks:
+                shuffledTracks.append(playlistTracks[tmp])
+            if len(shuffledTracks) == len(playlistTracks):
+                break
+        playlistTracks = shuffledTracks
+
     # Get max length, convert to float
     maxLength = request.form.get("playlistLength")
     if not isFloat(maxLength) or float(maxLength) < 0.5:
         return redirect('/functions')
     maxLength = float(maxLength)
-
-
-    print(playlistID, newName, shuffle, maxLength)
-
+    # Shorten playlist by adding songs until hitting max length
+    shortPlaylist = []
+    totalTime = 0
+    for trackID in playlistTracks:
+        dur = sp.track(trackID)["duration_ms"] / 1000.0 / 60 / 60
+        if totalTime + dur < maxLength:
+            shortPlaylist.append(trackID)
+            totalTime += dur
+        else:
+            break
+    date = datetime.date.today()
+    description = f"Shortened version of {sp.playlist(playlistID)['name']}, created on {date}"
+    # Create new playlist
+    newPlaylist = sp.user_playlist_create(sp.current_user()['id'], name=str(newName), description=description)
+    # Add songs
+    sp.playlist_add_items(newPlaylist['id'], shortPlaylist)
     return redirect('/functions')
 
 
@@ -142,6 +169,7 @@ def getLikedSongs(sp):
         if len(curGroup) < 50:
             break
     return songList
+
 
 # Checks to see if token is valid and gets a new token if not
 def get_token():
