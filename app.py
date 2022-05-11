@@ -50,7 +50,7 @@ def spotifyFunctions():
     if not authorized:
         return redirect('/')
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
-    songIDs = getLikedSongs(sp)
+    songIDs = getLikedSongs(sp, 0)
     songList = []
     for song in songIDs:
         track = sp.track(song)
@@ -64,12 +64,12 @@ def spotifyFunctions():
     for p in playlistsObject["items"]:
         if p['owner']['id'] == user['id']:
             playlists.append({"name": p["name"], "id": p["id"]})
-        else:
-            followed = sp.playlist(p['id'])
-            length = 0
-            for track in followed['tracks']['items']:
-                length += track['track']['duration_ms'] / 1000 / 60 / 60
-            followedPlaylists.append({"name": p["name"], "id": p["id"], "length": round(length, 3)})
+        # else:
+        followed = sp.playlist(p['id'])
+        length = 0
+        for track in followed['tracks']['items']:
+            length += track['track']['duration_ms'] / 1000 / 60 / 60
+        followedPlaylists.append({"name": p["name"], "id": p["id"], "length": round(length, 3)})
     # Just added a way to more easily visualize the structure
     # with open('playlistTest.json', 'w') as f:
     #     json.dump(playlistsObject, f)
@@ -78,18 +78,21 @@ def spotifyFunctions():
 
 @app.route('/addToPlaylist', methods=['POST'])
 def addToPlaylist():
+    # Adds user's 'liked songs' library to a playlist of choice
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
     playlistID = request.form.get("addToPlaylist")
-    songList = getLikedSongs(sp)
-    # sp.playlist_add_items(playlistID, songList)
+    songList = getLikedSongs(sp, 0)
+    sp.playlist_add_items(playlistID, songList)
     return redirect('/functions')
 
 
 @app.route('/removeFromLiked', methods=['POST'])
 def removeFromLiked():
+    # Clears user's library, but can only do 50 at a time
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
-    songList = getLikedSongs(sp)
-    # sp.current_user_saved_tracks_delete(songList)
+    songList = getLikedSongs(sp, 50)
+    print(len(songList))
+    sp.current_user_saved_tracks_delete(songList)
 
     return redirect('/functions')
 
@@ -155,7 +158,7 @@ def isFloat(i):
     return True
 
 
-def getLikedSongs(sp):
+def getLikedSongs(sp, mx):
     # Returns list of ids of songs in user's library
     songList = []
     count = 0
@@ -166,8 +169,12 @@ def getLikedSongs(sp):
         for idx, item in enumerate(curGroup):
             # val = {item['track']['id']}
             songList.append(item['track']['id'])
+        # this can be updated to use the mx value if needed
+        if mx != 0:
+            break
         if len(curGroup) < 50:
             break
+
     return songList
 
 
@@ -200,4 +207,4 @@ def create_spotify_oauth():
         client_secret=likedSecret,
         redirect_uri=url_for('authorize', _external=True),
         show_dialog=True,
-        scope="user-library-read, playlist-modify-public")
+        scope="user-library-read, user-library-modify, playlist-modify-public")
